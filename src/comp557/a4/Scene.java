@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.vecmath.Color3f;
+import javax.vecmath.Vector3d;
 
 /**
  * Simple scene loader based on XML file format.
@@ -45,21 +46,31 @@ public class Scene {
             for ( int i = 0; i < w && !render.isDone(); i++ ) {
             	
                 // TODO: Objective 1: generate a ray (use the generateRay method)
+                Ray ray = new Ray();
+                generateRay(i, j, new double[]{0, 0}, cam, ray);
             	
                 // TODO: Objective 2: test for intersection with scene surfaces
+                IntersectResult intersectResult = new IntersectResult();
+                surfaceList.get(0).intersect(ray, intersectResult);
             	
                 // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
                 
             	// Here is an example of how to calculate the pixel value.
-            	Color3f c = new Color3f(render.bgcolor);
-            	int r = (int)(255*c.x);
+                Color3f c = new Color3f(render.bgcolor);
+                int r = (int)(255*c.x);
                 int g = (int)(255*c.y);
                 int b = (int)(255*c.z);
                 int a = 255;
-                int argb = (a<<24 | r<<16 | g<<8 | b);    
-                
+                int argb = (a<<24 | r<<16 | g<<8 | b);
+                if (intersectResult.t != Double.POSITIVE_INFINITY) {
+                    r = 255;
+                    g = 255;
+                    b = 255;
+                    argb = (a<<24 | r<<16 | g<<8 | b);
+                }
                 // update the render image
                 render.setPixel(i, j, argb);
+
             }
         }
         
@@ -83,7 +94,26 @@ public class Scene {
 	public static void generateRay(final int i, final int j, final double[] offset, final Camera cam, Ray ray) {
 		
 		// TODO: Objective 1: generate rays given the provided parmeters
-		
+        Vector3d w = new Vector3d();
+        w.sub(cam.from, cam.to);
+        w.normalize();
+        Vector3d u = new Vector3d();
+        u.cross(cam.up, w);
+        u.normalize();
+        Vector3d v = new Vector3d();
+        v.cross(w, u);
+        v.normalize();
+        double d = cam.imageSize.height / Math.tan(cam.fovy/2) /2;
+        double xViewPlaneAdjust = cam.imageSize.width/2;
+        double yViewPlaneAdjust = cam.imageSize.height/2;
+
+        Vector3d s = new Vector3d();
+        s.scaleAdd(i - xViewPlaneAdjust + offset[0], u, cam.from);
+        s.scaleAdd(j - yViewPlaneAdjust + offset[1], v, s);
+        s.scaleAdd(-d, w, s);
+        Vector3d direction = new Vector3d();
+        direction.sub(s, cam.to);
+        ray.set(cam.from, direction);
 	}
 
 	/**
