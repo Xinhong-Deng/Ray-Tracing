@@ -63,12 +63,19 @@ public class Scene {
                 int a = 255;
                 int argb = (a<<24 | r<<16 | g<<8 | b);
                 if (intersectResult.t != Double.POSITIVE_INFINITY) {
-
-                    Light myLight = lights.get("myLight");
-                    int[] lightResult = lightCalculation(myLight, cam, intersectResult);
-                    r = lightResult[0];
-                    g = lightResult[1];
-                    b = lightResult[2];
+                    // todo: alpha not calculated?
+                    r = 0;
+                    g = 0;
+                    b = 0;
+                    for (Light light : lights.values()) {
+                        int[] lightResult = lightCalculation(light, cam, intersectResult);
+                        r += lightResult[0];
+                        g += lightResult[1];
+                        b += lightResult[2];
+                    }
+                    r = Math.min(255, r);
+                    g = Math.min(255, g);
+                    b = Math.min(255, b);
 
                     argb = (a<<24 | r<<16 | g<<8 | b);
                 }
@@ -98,9 +105,9 @@ public class Scene {
         halfVector.normalize();
         Material material = intersectResult.material;
 
-        int r = Math.min(255, lightCalculationChannel('r', light, lightDirection, material, intersectResult.n, halfVector));
-        int g = Math.min(255, lightCalculationChannel('g', light, lightDirection, material, intersectResult.n, halfVector));
-        int b = Math.min(255, lightCalculationChannel('b', light, lightDirection, material, intersectResult.n, halfVector));
+        int r = lightCalculationChannel('r', light, lightDirection, material, intersectResult.n, halfVector);
+        int g = lightCalculationChannel('g', light, lightDirection, material, intersectResult.n, halfVector);
+        int b = lightCalculationChannel('b', light, lightDirection, material, intersectResult.n, halfVector);
         return new int[]{r, g, b};
     }
 
