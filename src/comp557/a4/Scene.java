@@ -51,7 +51,14 @@ public class Scene {
             	
                 // TODO: Objective 2: test for intersection with scene surfaces
                 IntersectResult intersectResult = new IntersectResult();
-                surfaceList.get(0).intersect(ray, intersectResult);
+                for (Intersectable surface : surfaceList) {
+                    IntersectResult temp = new IntersectResult();
+                    surface.intersect(ray, temp);
+                    if (temp.t < intersectResult.t) {
+                        intersectResult = temp;
+                    }
+                }
+
             	
                 // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
                 

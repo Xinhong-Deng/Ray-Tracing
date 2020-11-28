@@ -28,7 +28,71 @@ public class Plane extends Intersectable {
     public void intersect( Ray ray, IntersectResult result ) {
     
         // TODO: Objective 4: intersection of ray with plane
-    	
+    	// the plane pass through (0, 0, 0) with normal (0, 1, 0)
+        double dDotN = ray.viewDirection.dot(n);
+        if (dDotN == 0) {
+            // no intersection
+            return;
+        }
+
+        Vector3d lineOnPlane = new Vector3d(ray.eyePoint);
+        lineOnPlane.negate();
+        double t = lineOnPlane.dot(n) / dDotN;
+        if (t < 0) {
+            return;
+        }
+
+        result.t = t;
+        result.p.scaleAdd(result.t, ray.viewDirection, ray.eyePoint);
+        result.n = n;
+
+        if (material2 == null) {
+            result.material = material;
+            return;
+        }
+
+        int xOffset = ((int) (Math.abs(result.p.x)/2)) * 2 + 1;
+        int zOffset = ((int) (Math.abs(result.p.z)/2)) * 2 + 1;
+        double shiftedX = result.p.x;
+        double shiftedZ = result.p.z;
+        if (result.p.x < 0) {
+            shiftedX += xOffset;
+        } else {
+            shiftedX -= xOffset;
+        }
+        if (result.p.z < 0) {
+            shiftedZ += zOffset;
+        } else {
+            shiftedZ -= zOffset;
+        }
+
+        if (( shiftedX > 0 && shiftedZ > 0) || (shiftedX < 0 && shiftedZ < 0)) {
+            result.material = material;
+        } else {
+            result.material = material2;
+        }
+
+//        int xOffset = ((int) (Math.abs(result.p.x)/2)) * 2 + 1;
+//        int zOffset = ((int) (Math.abs(result.p.z)/2)) * 2 + 1;
+//        double shiftedX = result.p.x;
+//        double shiftedZ = result.p.z;
+//        if (result.p.x < 0) {
+//            shiftedX += xOffset;
+//        } else {
+//            shiftedX -= xOffset;
+//        }
+//        if (result.p.z < 0) {
+//            shiftedZ += zOffset;
+//        } else {
+//            shiftedZ -= zOffset;
+//        }
+//
+//        if (( shiftedX > 0 && shiftedZ > 0) || (shiftedX < 0 && shiftedZ < 0)) {
+//            result.material = material;
+//        } else {
+//            result.material = material2;
+//        }
+
     }
     
 }

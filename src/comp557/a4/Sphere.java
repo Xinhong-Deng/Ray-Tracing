@@ -52,7 +52,6 @@ public class Sphere extends Intersectable {
 		double t2 = (-dDotP - sqartResult) / dDotD;
 
 		if (t1 < 0 && t2 < 0) {
-			// todo: t cannot be negative??
 			return;
 		}
 
