@@ -68,7 +68,8 @@ public class Sphere extends Intersectable {
 		result.t = t;
 		result.p.scaleAdd(t, ray.viewDirection, ray.eyePoint);
 		result.material = this.material;
-		// todo: not filling the normal here
+		result.n.sub(result.p, center);
+		result.n.normalize();
     }
     
 }

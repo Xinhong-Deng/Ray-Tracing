@@ -63,9 +63,13 @@ public class Scene {
                 int a = 255;
                 int argb = (a<<24 | r<<16 | g<<8 | b);
                 if (intersectResult.t != Double.POSITIVE_INFINITY) {
-                    r = 255;
-                    g = 255;
-                    b = 255;
+
+                    Light myLight = lights.get("myLight");
+                    int[] lightResult = lightCalculation(myLight, cam, intersectResult);
+                    r = lightResult[0];
+                    g = lightResult[1];
+                    b = lightResult[2];
+
                     argb = (a<<24 | r<<16 | g<<8 | b);
                 }
                 // update the render image
@@ -81,7 +85,64 @@ public class Scene {
         render.waitDone();
         
     }
-    
+
+    private int[] lightCalculation(Light light, Camera camera, IntersectResult intersectResult) {
+        Vector3d lightDirection = new Vector3d();
+        lightDirection.sub(light.from, intersectResult.p);
+        lightDirection.normalize();
+        Vector3d cameraDirection = new Vector3d();
+        cameraDirection.sub(camera.from, intersectResult.p);
+        cameraDirection.normalize();
+        Vector3d halfVector = new Vector3d();
+        halfVector.add(lightDirection, cameraDirection);
+        halfVector.normalize();
+        Material material = intersectResult.material;
+
+        int r = Math.min(255, lightCalculationChannel('r', light, lightDirection, material, intersectResult.n, halfVector));
+        int g = Math.min(255, lightCalculationChannel('g', light, lightDirection, material, intersectResult.n, halfVector));
+        int b = Math.min(255, lightCalculationChannel('b', light, lightDirection, material, intersectResult.n, halfVector));
+        return new int[]{r, g, b};
+    }
+
+    private int lightCalculationChannel(char channel, Light light, Vector3d lightDirection, Material material, Vector3d normal, Vector3d halfVector) {
+        float diffuse = 0;
+        float lightColor = 0;
+        float specularCoef = 0;
+        switch (channel) {
+            case 'r':
+                diffuse = material.diffuse.x;
+                lightColor = light.color.x;
+                specularCoef = material.specular.x;
+                break;
+            case 'g':
+                diffuse = material.diffuse.y;
+                lightColor = light.color.y;
+                specularCoef = material.specular.y;
+                break;
+            case 'b':
+                diffuse = material.diffuse.z;
+                lightColor = light.color.z;
+                specularCoef = material.specular.z;
+                break;
+        }
+
+        double lambertian = lambertian(diffuse, light.power, lightColor, normal, lightDirection);
+        double blinnphong = blinnphong(specularCoef, light.power, lightColor, normal, halfVector, material.shinyness);
+        return (int) (255 * (lambertian + blinnphong));
+    }
+
+    private double lambertian(float diffuse, double power, float lightColor, Vector3d normal, Vector3d lightDirection) {
+        return diffuse * power * lightColor * Math.max(0, normal.dot(lightDirection));
+    }
+
+    private double blinnphong(float specularCoef, double power, float lightColor, Vector3d normal, Vector3d halfVector, float shininess) {
+        return specularCoef * power * lightColor * Math.pow(Math.max(0, normal.dot(halfVector)), shininess);
+    }
+
+    private int ambient() {
+        // todo: ambient
+        return 0;
+    }
     /**
      * Generate a ray through pixel (i,j).
      * 
@@ -108,8 +169,10 @@ public class Scene {
         double yViewPlaneAdjust = cam.imageSize.height/2;
 
         Vector3d s = new Vector3d();
+        // x highest at the right, lowest at the left, 0 at the center
         s.scaleAdd(i - xViewPlaneAdjust + offset[0], u, cam.from);
-        s.scaleAdd(j - yViewPlaneAdjust + offset[1], v, s);
+        // j highest at the top, lowest at the bottom, 0 at the center
+        s.scaleAdd(- j + yViewPlaneAdjust + offset[1], v, s);
         s.scaleAdd(-d, w, s);
         Vector3d direction = new Vector3d();
         direction.sub(s, cam.to);
