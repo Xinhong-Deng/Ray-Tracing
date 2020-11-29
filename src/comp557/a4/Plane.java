@@ -51,6 +51,7 @@ public class Plane extends Intersectable {
             return;
         }
 
+        // todo: need to fix the color!!
         int xOffset = ((int) (Math.abs(result.p.x)/2)) * 2 + 1;
         int zOffset = ((int) (Math.abs(result.p.z)/2)) * 2 + 1;
         double shiftedX = result.p.x;

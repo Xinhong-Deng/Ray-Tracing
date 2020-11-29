@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.vecmath.Color3f;
+import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 /**
@@ -23,6 +24,8 @@ public class Scene {
     
     /** The ambient light colour */
     public Color3f ambient = new Color3f();
+
+    private final double AMBIENT = 0.2;
 
     /** 
      * Default constructor.
@@ -67,18 +70,26 @@ public class Scene {
                 int argb = (a<<24 | r<<16 | g<<8 | b);
                 if (intersectResult.t != Double.POSITIVE_INFINITY) {
                     // todo: alpha not calculated?
-                    r = 0;
-                    g = 0;
-                    b = 0;
+                    double rTemp = intersectResult.material.diffuse.x * AMBIENT;
+                    double gTemp = intersectResult.material.diffuse.y * AMBIENT;
+                    double bTemp = intersectResult.material.diffuse.z * AMBIENT;
                     for (Light light : lights.values()) {
-                        int[] lightResult = lightCalculation(light, cam, intersectResult);
-                        r += lightResult[0];
-                        g += lightResult[1];
-                        b += lightResult[2];
+                        if (surfaceList.get(0) instanceof SceneNode) {
+                            IntersectResult shadowResult = new IntersectResult();
+                            Ray shadowRay = new Ray();
+                            if (inShadow(intersectResult, light, (SceneNode) surfaceList.get(0), shadowResult, shadowRay)) {
+                                continue;
+                            }
+                        }
+
+                        double[] lightResult = lightCalculation(light, cam, intersectResult);
+                        rTemp += lightResult[0];
+                        gTemp += lightResult[1];
+                        bTemp += lightResult[2];
                     }
-                    r = Math.min(255, r);
-                    g = Math.min(255, g);
-                    b = Math.min(255, b);
+                    r = Math.min(255, (int)((rTemp) * 255));
+                    g = Math.min(255, (int)((gTemp) * 255));
+                    b = Math.min(255, (int)((bTemp) * 255));
 
                     argb = (a<<24 | r<<16 | g<<8 | b);
                 }
@@ -96,7 +107,7 @@ public class Scene {
         
     }
 
-    private int[] lightCalculation(Light light, Camera camera, IntersectResult intersectResult) {
+    private double[] lightCalculation(Light light, Camera camera, IntersectResult intersectResult) {
         Vector3d lightDirection = new Vector3d();
         lightDirection.sub(light.from, intersectResult.p);
         lightDirection.normalize();
@@ -108,13 +119,13 @@ public class Scene {
         halfVector.normalize();
         Material material = intersectResult.material;
 
-        int r = lightCalculationChannel('r', light, lightDirection, material, intersectResult.n, halfVector);
-        int g = lightCalculationChannel('g', light, lightDirection, material, intersectResult.n, halfVector);
-        int b = lightCalculationChannel('b', light, lightDirection, material, intersectResult.n, halfVector);
-        return new int[]{r, g, b};
+        double r = lightCalculationChannel('r', light, lightDirection, material, intersectResult.n, halfVector);
+        double g = lightCalculationChannel('g', light, lightDirection, material, intersectResult.n, halfVector);
+        double b = lightCalculationChannel('b', light, lightDirection, material, intersectResult.n, halfVector);
+        return new double[]{r, g, b};
     }
 
-    private int lightCalculationChannel(char channel, Light light, Vector3d lightDirection, Material material, Vector3d normal, Vector3d halfVector) {
+    private double lightCalculationChannel(char channel, Light light, Vector3d lightDirection, Material material, Vector3d normal, Vector3d halfVector) {
         float diffuse = 0;
         float lightColor = 0;
         float specularCoef = 0;
@@ -138,7 +149,7 @@ public class Scene {
 
         double lambertian = lambertian(diffuse, light.power, lightColor, normal, lightDirection);
         double blinnphong = blinnphong(specularCoef, light.power, lightColor, normal, halfVector, material.shinyness);
-        return (int) (255 * (lambertian + blinnphong));
+        return lambertian + blinnphong;
     }
 
     private double lambertian(float diffuse, double power, float lightColor, Vector3d normal, Vector3d lightDirection) {
@@ -203,7 +214,26 @@ public class Scene {
 	public static boolean inShadow(final IntersectResult result, final Light light, final SceneNode root, IntersectResult shadowResult, Ray shadowRay) {
 		
 		// TODO: Objective 5: check for shdows and use it in your lighting computation
-		
-		return false;
+		// todo: not exactly the same as the diagram
+        Vector3d direction = new Vector3d();
+		direction.sub(light.from, result.p);
+		shadowRay.viewDirection = direction;
+        shadowRay.eyePoint = new Point3d();
+
+        // offset the eyepoint to avoid self-shadowing
+        shadowRay.eyePoint.scaleAdd(0.00001, shadowRay.viewDirection, result.p);
+
+		boolean inShadow = false;
+		for (Intersectable object : root.children) {
+		    object.intersect(shadowRay, shadowResult);
+		    if (shadowResult.t < Double.POSITIVE_INFINITY) {
+		        // light ray occlude by object
+                // but the shadowResult is not the closet intersection
+                inShadow = true;
+                break;
+            }
+        }
+
+		return inShadow;
 	}    
 }
