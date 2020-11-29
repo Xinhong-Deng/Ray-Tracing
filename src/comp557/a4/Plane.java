@@ -30,7 +30,7 @@ public class Plane extends Intersectable {
         // TODO: Objective 4: intersection of ray with plane
     	// the plane pass through (0, 0, 0) with normal (0, 1, 0)
         double dDotN = ray.viewDirection.dot(n);
-        if (dDotN == 0) {
+        if (Math.abs(dDotN) < 1e-9) {
             // no intersection
             return;
         }
@@ -38,13 +38,13 @@ public class Plane extends Intersectable {
         Vector3d lineOnPlane = new Vector3d(ray.eyePoint);
         lineOnPlane.negate();
         double t = lineOnPlane.dot(n) / dDotN;
-        if (t < 0) {
+        if (t < 1e-9 || t > result.t) {
             return;
         }
 
         result.t = t;
         result.p.scaleAdd(result.t, ray.viewDirection, ray.eyePoint);
-        result.n = n;
+        result.n = new Vector3d(n);
 
         if (material2 == null) {
             result.material = material;

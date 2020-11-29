@@ -40,6 +40,7 @@ public class Sphere extends Intersectable {
     
         // TODO: Objective 2: intersection of ray with sphere
 	    Vector3d pVector = new Vector3d(ray.eyePoint);
+	    pVector.sub(center);
 	    double dDotP = ray.viewDirection.dot(pVector);
 		double dDotD = ray.viewDirection.dot(ray.viewDirection);
 		double pDotP = pVector.dot(pVector);
@@ -64,6 +65,9 @@ public class Sphere extends Intersectable {
 			t = Math.min(t1, t2);
 		}
 
+		if (t > result.t) {
+			return;
+		}
 		result.t = t;
 		result.p.scaleAdd(t, ray.viewDirection, ray.eyePoint);
 		result.material = this.material;

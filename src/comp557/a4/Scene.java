@@ -47,16 +47,12 @@ public class Scene {
             	
                 // TODO: Objective 1: generate a ray (use the generateRay method)
                 Ray ray = new Ray();
-                generateRay(i, j, new double[]{0, 0}, cam, ray);
+                generateRay(i, j, new double[]{0.25, 0.25}, cam, ray);
             	
                 // TODO: Objective 2: test for intersection with scene surfaces
                 IntersectResult intersectResult = new IntersectResult();
                 for (Intersectable surface : surfaceList) {
-                    IntersectResult temp = new IntersectResult();
-                    surface.intersect(ray, temp);
-                    if (temp.t < intersectResult.t) {
-                        intersectResult = temp;
-                    }
+                    surface.intersect(ray, intersectResult);
                 }
 
             	

@@ -64,7 +64,19 @@ public class SceneNode extends Intersectable {
         if ( tmpResult.t > 1e-9 && tmpResult.t < result.t ) {
 
         	// TODO: do something useful here!
-        
+            result.t = tmpResult.t;
+
+            if (tmpResult.material == null) {
+                result.material = material;
+            } else {
+                result.material = tmpResult.material;
+            }
+
+            result.p = tmpResult.p;
+            M.transform(result.p);
+
+            result.n = tmpResult.n;
+            M.transform(result.n);
         }
     }
     
