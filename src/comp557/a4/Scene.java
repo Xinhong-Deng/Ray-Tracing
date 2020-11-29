@@ -25,7 +25,7 @@ public class Scene {
     /** The ambient light colour */
     public Color3f ambient = new Color3f();
 
-    private final double AMBIENT = 0.2;
+    private final double AMBIENT = 0.15;
 
     /** 
      * Default constructor.
