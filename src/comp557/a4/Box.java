@@ -51,8 +51,6 @@ public class Box extends Intersectable {
         result.t = tmin;
         result.p.scaleAdd(tmin, ray.viewDirection, ray.eyePoint);
         result.material = material;
-        // todo: rounding problem?
-        DecimalFormat df = new DecimalFormat("#.####");
         if (Math.round(result.p.x * 1e5) / 1e5 == min.x) {
             result.n = new Vector3d(-1, 0, 0);
         } else if (Math.round(result.p.x * 1e5) / 1e5 == max.x) {

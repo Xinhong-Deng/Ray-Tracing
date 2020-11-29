@@ -52,7 +52,7 @@ public class Sphere extends Intersectable {
 		double t1 = (-dDotP + sqartResult) / dDotD;
 		double t2 = (-dDotP - sqartResult) / dDotD;
 
-		if (t1 < 0 && t2 < 0) {
+		if (t1 < 1e-9 && t2 < 1e-9) {
 			return;
 		}
 

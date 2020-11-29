@@ -57,7 +57,7 @@ public class SceneNode extends Intersectable {
     	Minv.transform(tmpRay.eyePoint);
     	Minv.transform(tmpRay.viewDirection);    	
     	tmpResult.t = Double.POSITIVE_INFINITY;
-    	tmpResult.n.set(0, 0, 1);
+//    	tmpResult.n.set(0, 0, 1);
         for ( Intersectable s : children ) {
             s.intersect( tmpRay, tmpResult );
         }
@@ -72,11 +72,15 @@ public class SceneNode extends Intersectable {
                 result.material = tmpResult.material;
             }
 
+            // todo: bug in shadow
             result.p = tmpResult.p;
             M.transform(result.p);
 
             result.n = tmpResult.n;
-            M.transform(result.n);
+            Matrix4d MT = new Matrix4d(Minv);
+            MT.transpose();
+            MT.transform(result.n);
+            result.n.normalize();
         }
     }
     
