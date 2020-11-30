@@ -111,7 +111,10 @@ public class Parser {
 	            } else if ( nodeName.equalsIgnoreCase( "mesh" ) ) {
 	            	Mesh mesh = Parser.createMesh(n);
 	            	sceneNode.children.add( mesh );
-	            }
+	            } else if (nodeName.equalsIgnoreCase( "bezier" ) ) {
+					BezierSurfacePatch patch = Parser.createBezierPatch(n);
+					sceneNode.children.add( patch );
+				}
 	        }	        
             if ( !SceneNode.nodeMap.containsKey(sceneNode.name) ) {
             	SceneNode.nodeMap.put( sceneNode.name, sceneNode );
@@ -461,6 +464,16 @@ public class Parser {
         }
         mesh.material = parseMaterial(dataNode, "material");
     	return mesh;    	
+	}
+
+	/**
+	 * Create a mesh object.
+	 */
+	public static BezierSurfacePatch createBezierPatch(Node dataNode) {
+		Node filenameAttr = dataNode.getAttributes().getNamedItem("filename");
+		BezierSurfacePatch patch = new BezierSurfacePatch( filenameAttr.getNodeValue() );
+		patch.material = parseMaterial(dataNode, "material");
+		return patch;
 	}
 
 	/**
