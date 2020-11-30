@@ -159,10 +159,6 @@ public class Scene {
         return specularCoef * power * lightColor * Math.pow(Math.max(0, normal.dot(halfVector)), shininess);
     }
 
-    private int ambient() {
-        // todo: ambient
-        return 0;
-    }
     /**
      * Generate a ray through pixel (i,j).
      * 
@@ -213,7 +209,6 @@ public class Scene {
 	public static boolean inShadow(final IntersectResult result, final Light light, final SceneNode root, IntersectResult shadowResult, Ray shadowRay) {
 		
 		// TODO: Objective 5: check for shdows and use it in your lighting computation
-		// todo: not exactly the same as the diagram
         double offset = 0.00001;
 
         Vector3d direction = new Vector3d();
