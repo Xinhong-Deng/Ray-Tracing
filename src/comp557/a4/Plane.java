@@ -45,54 +45,14 @@ public class Plane extends Intersectable {
         result.t = t;
         result.p.scaleAdd(result.t, ray.viewDirection, ray.eyePoint);
         result.n = new Vector3d(n);
-
+        result.material = material;
         if (material2 == null) {
-            result.material = material;
             return;
         }
 
-        // todo: need to fix the color!!
-        int xOffset = ((int) (Math.abs(result.p.x)/2)) * 2 + 1;
-        int zOffset = ((int) (Math.abs(result.p.z)/2)) * 2 + 1;
-        double shiftedX = result.p.x;
-        double shiftedZ = result.p.z;
-        if (result.p.x < 0) {
-            shiftedX += xOffset;
-        } else {
-            shiftedX -= xOffset;
-        }
-        if (result.p.z < 0) {
-            shiftedZ += zOffset;
-        } else {
-            shiftedZ -= zOffset;
-        }
-
-        if (( shiftedX > 0 && shiftedZ > 0) || (shiftedX < 0 && shiftedZ < 0)) {
-            result.material = material;
-        } else {
+        if ((Math.floor(result.p.x) + Math.floor(result.p.z))%2 != 0) {
             result.material = material2;
         }
-
-//        int xOffset = ((int) (Math.abs(result.p.x)/2)) * 2 + 1;
-//        int zOffset = ((int) (Math.abs(result.p.z)/2)) * 2 + 1;
-//        double shiftedX = result.p.x;
-//        double shiftedZ = result.p.z;
-//        if (result.p.x < 0) {
-//            shiftedX += xOffset;
-//        } else {
-//            shiftedX -= xOffset;
-//        }
-//        if (result.p.z < 0) {
-//            shiftedZ += zOffset;
-//        } else {
-//            shiftedZ -= zOffset;
-//        }
-//
-//        if (( shiftedX > 0 && shiftedZ > 0) || (shiftedX < 0 && shiftedZ < 0)) {
-//            result.material = material;
-//        } else {
-//            result.material = material2;
-//        }
 
     }
     

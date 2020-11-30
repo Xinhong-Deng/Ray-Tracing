@@ -25,8 +25,7 @@ public class Scene {
     /** The ambient light colour */
     public Color3f ambient = new Color3f();
 
-    private final double AMBIENT = 0.15;
-
+    private boolean jitter = false;
     /** 
      * Default constructor.
      */
@@ -70,9 +69,9 @@ public class Scene {
                 int argb = (a<<24 | r<<16 | g<<8 | b);
                 if (intersectResult.t != Double.POSITIVE_INFINITY) {
                     // todo: alpha not calculated?
-                    double rTemp = intersectResult.material.diffuse.x * AMBIENT;
-                    double gTemp = intersectResult.material.diffuse.y * AMBIENT;
-                    double bTemp = intersectResult.material.diffuse.z * AMBIENT;
+                    double rTemp = intersectResult.material.diffuse.x * ambient.x;
+                    double gTemp = intersectResult.material.diffuse.y * ambient.y;
+                    double bTemp = intersectResult.material.diffuse.z * ambient.z;
                     for (Light light : lights.values()) {
                         if (surfaceList.get(0) instanceof SceneNode) {
                             IntersectResult shadowResult = new IntersectResult();
@@ -215,18 +214,23 @@ public class Scene {
 		
 		// TODO: Objective 5: check for shdows and use it in your lighting computation
 		// todo: not exactly the same as the diagram
+        double offset = 0.00001;
+
         Vector3d direction = new Vector3d();
 		direction.sub(light.from, result.p);
+		double tLight = direction.length() - offset;
+		direction.normalize();
 		shadowRay.viewDirection = direction;
-        shadowRay.eyePoint = new Point3d();
 
         // offset the eyepoint to avoid self-shadowing
-        shadowRay.eyePoint.scaleAdd(0.00001, shadowRay.viewDirection, result.p);
+        shadowRay.eyePoint = new Point3d();
+        shadowRay.eyePoint.scaleAdd(offset, shadowRay.viewDirection, result.p);
+
 
 		boolean inShadow = false;
 		for (Intersectable object : root.children) {
 		    object.intersect(shadowRay, shadowResult);
-		    if (shadowResult.t < Double.POSITIVE_INFINITY) {
+		    if (shadowResult.t < tLight) {
 		        // light ray occlude by object
                 // but the shadowResult is not the closet intersection
                 inShadow = true;
