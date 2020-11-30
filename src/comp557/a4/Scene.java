@@ -1,9 +1,6 @@
 package comp557.a4;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.vecmath.Color3f;
 import javax.vecmath.Color4f;
 import javax.vecmath.Point3d;
@@ -26,8 +23,6 @@ public class Scene {
     /** The ambient light colour */
     public Color3f ambient = new Color3f();
 
-    private boolean jitter = false;
-
     private final int MAX_DEPTH = 3;
     private final double REFLECTION_RATIO = 0.8;
     /** 
@@ -47,24 +42,48 @@ public class Scene {
         int h = cam.imageSize.height;
         
         render.init(w, h, showPanel);
-        
+        Random generator = new Random();
         for ( int j = 0; j < h && !render.isDone(); j++ ) {
             for ( int i = 0; i < w && !render.isDone(); i++ ) {
-            	
-                // TODO: Objective 1: generate a ray (use the generateRay method)
-                Ray ray = new Ray();
-                generateRay(i, j, new double[]{0.25, 0.25}, cam, ray);
-            	
-                // TODO: Objective 2: test for intersection with scene surfaces
-                // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
-                
-            	// Here is an example of how to calculate the pixel value.
-                IntersectResult intersectResult = new IntersectResult();
-                double[] result = rayTracing(ray, intersectResult, cam, 0, new Color3f(render.bgcolor));
-                int r = Math.min(255, (int)((result[0]) * 255));
-                int g = Math.min(255, (int)((result[1]) * 255));
-                int b = Math.min(255, (int)((result[2]) * 255));
+            	int r = 0;
+            	int g = 0;
+            	int b = 0;
                 int a = 255;
+
+                // TODO: Objective 1: generate a ray (use the generateRay method)
+                // TODO: Objective 2: test for intersection with scene surfaces - merge with objective 3 in rayTracing()
+                // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
+
+                // monte-carlo antialiasing
+                for (int nsy = 0; nsy < render.samples; nsy ++) {
+                    for (int nsx = 0; nsx < render.samples; nsx ++) {
+//                        double rx = generator.nextDouble() - 0.5;
+//                        double ry = generator.nextDouble() - 0.5;
+                        double ry = (nsy + 0.5) / render.samples - 0.5;
+                        double rx = (nsx + 0.5) / render.samples - 0.5;
+
+                        Ray ray = new Ray();
+                        generateRay(i, j, new double[]{rx, ry}, cam, ray);
+
+                        IntersectResult intersectResult = new IntersectResult();
+                        double[] result = rayTracing(ray, intersectResult, cam, 0, new Color3f(render.bgcolor));
+
+                        if (render.jitter) {
+                            r += (generator.nextDouble() - 0.5) * 2.55;
+                            g += (generator.nextDouble() - 0.5) * 2.55;
+                            b += (generator.nextDouble() - 0.5) * 2.55;
+                        }
+
+                        r += Math.min(255, (int)((result[0]) * 255));
+                        g += Math.min(255, (int)((result[1]) * 255));
+                        b += Math.min(255, (int)((result[2]) * 255));
+                    }
+
+                }
+
+            	r /= Math.pow(render.samples, 2);
+                g /= Math.pow(render.samples, 2);
+                b /= Math.pow(render.samples, 2);
 
                 int argb = (a<<24 | r<<16 | g<<8 | b);
                 // update the render image
@@ -188,28 +207,6 @@ public class Scene {
         return specularCoef * power * lightColor * Math.pow(Math.max(0, normal.dot(halfVector)), shininess);
     }
 
-//    private double[] reflectionCalculation(Ray ray, int depth, IntersectResult intersectResult) {
-//        double[] result = new double[3];
-//        if (depth > MAX_DEPTH) {
-//            return result;
-//        }
-//
-//        Vector3d reflectionDirection = new Vector3d();
-//        Vector3d temp = new Vector3d(intersectResult.n);
-//        temp.scale(2 * intersectResult.n.dot(ray.viewDirection));
-//        reflectionDirection.sub(ray.viewDirection, temp);
-//        Ray reflectionRay = new Ray(intersectResult.p, reflectionDirection);
-//        IntersectResult intersectResult1 = new IntersectResult();
-//        rayTracing(reflectionRay, intersectResult1);
-//        if (intersectResult.t < Double.POSITIVE_INFINITY) {
-//            double reflectionRatio = 0.8;
-//            double[] tempResult = reflectionCalculation(reflectionRay, depth + 1, intersectResult1);
-//            result[0] += reflectionRatio * tempResult[0];
-//            result[1] += reflectionRatio * tempResult[1];
-//            result[2] += reflectionRatio * tempResult[2];
-//        }
-//        return result;
-//    }
     /**
      * Generate a ray through pixel (i,j).
      * 
@@ -237,9 +234,9 @@ public class Scene {
 
         Vector3d s = new Vector3d();
         // x highest at the right, lowest at the left, 0 at the center
-        s.scaleAdd(i - xViewPlaneAdjust + offset[0], u, cam.from);
+        s.scaleAdd((double)i - xViewPlaneAdjust + offset[0], u, cam.from);
         // j highest at the top, lowest at the bottom, 0 at the center
-        s.scaleAdd(- j + yViewPlaneAdjust + offset[1], v, s);
+        s.scaleAdd((double)- j + yViewPlaneAdjust + offset[1], v, s);
         s.scaleAdd(-d, w, s);
         Vector3d direction = new Vector3d();
         direction.sub(s, cam.to);
