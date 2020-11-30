@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.vecmath.Color3f;
+import javax.vecmath.Color4f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
@@ -26,6 +27,9 @@ public class Scene {
     public Color3f ambient = new Color3f();
 
     private boolean jitter = false;
+
+    private final int MAX_DEPTH = 3;
+    private final double REFLECTION_RATIO = 0.8;
     /** 
      * Default constructor.
      */
@@ -52,46 +56,17 @@ public class Scene {
                 generateRay(i, j, new double[]{0.25, 0.25}, cam, ray);
             	
                 // TODO: Objective 2: test for intersection with scene surfaces
-                IntersectResult intersectResult = new IntersectResult();
-                for (Intersectable surface : surfaceList) {
-                    surface.intersect(ray, intersectResult);
-                }
-
-            	
                 // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
                 
             	// Here is an example of how to calculate the pixel value.
-                Color3f c = new Color3f(render.bgcolor);
-                int r = (int)(255*c.x);
-                int g = (int)(255*c.y);
-                int b = (int)(255*c.z);
+                IntersectResult intersectResult = new IntersectResult();
+                double[] result = rayTracing(ray, intersectResult, cam, 0, new Color3f(render.bgcolor));
+                int r = Math.min(255, (int)((result[0]) * 255));
+                int g = Math.min(255, (int)((result[1]) * 255));
+                int b = Math.min(255, (int)((result[2]) * 255));
                 int a = 255;
+
                 int argb = (a<<24 | r<<16 | g<<8 | b);
-                if (intersectResult.t != Double.POSITIVE_INFINITY) {
-                    // todo: alpha not calculated?
-                    double rTemp = intersectResult.material.diffuse.x * ambient.x;
-                    double gTemp = intersectResult.material.diffuse.y * ambient.y;
-                    double bTemp = intersectResult.material.diffuse.z * ambient.z;
-                    for (Light light : lights.values()) {
-                        if (surfaceList.get(0) instanceof SceneNode) {
-                            IntersectResult shadowResult = new IntersectResult();
-                            Ray shadowRay = new Ray();
-                            if (inShadow(intersectResult, light, (SceneNode) surfaceList.get(0), shadowResult, shadowRay)) {
-                                continue;
-                            }
-                        }
-
-                        double[] lightResult = lightCalculation(light, cam, intersectResult);
-                        rTemp += lightResult[0];
-                        gTemp += lightResult[1];
-                        bTemp += lightResult[2];
-                    }
-                    r = Math.min(255, (int)((rTemp) * 255));
-                    g = Math.min(255, (int)((gTemp) * 255));
-                    b = Math.min(255, (int)((bTemp) * 255));
-
-                    argb = (a<<24 | r<<16 | g<<8 | b);
-                }
                 // update the render image
                 render.setPixel(i, j, argb);
 
@@ -104,6 +79,60 @@ public class Scene {
         // wait for render viewer to close
         render.waitDone();
         
+    }
+
+    private double[] rayTracing(Ray ray, IntersectResult intersectResult, Camera camera, int depth, Color3f bgColor) {
+        double[] result = new double[]{bgColor.x, bgColor.y, bgColor.z};
+        if (depth > MAX_DEPTH) {
+            return result;
+        }
+
+        for (Intersectable surface : surfaceList) {
+            surface.intersect(ray, intersectResult);
+        }
+
+        if (intersectResult.t >= Double.POSITIVE_INFINITY) {
+            return result;
+        }
+
+        if (intersectResult.material.name.equals("mirror")) {
+            // mirror reflection
+            result[0] = 0;
+            result[1] = 0;
+            result[2] = 0;
+            Vector3d reflectionDirection = new Vector3d();
+            Vector3d temp = new Vector3d(intersectResult.n);
+            temp.scale(2 * intersectResult.n.dot(ray.viewDirection));
+            reflectionDirection.sub(ray.viewDirection, temp);
+
+            Ray reflectionRay = new Ray(intersectResult.p, reflectionDirection);
+            IntersectResult intersectResult1 = new IntersectResult();
+            double[] tempResult = rayTracing(reflectionRay, intersectResult1, camera, depth + 1, bgColor);
+            result[0] += REFLECTION_RATIO * tempResult[0];
+            result[1] += REFLECTION_RATIO * tempResult[1];
+            result[2] += REFLECTION_RATIO * tempResult[2];
+        } else {
+
+            // diffusion
+            result[0] = intersectResult.material.diffuse.x * ambient.x;
+            result[1] = intersectResult.material.diffuse.y * ambient.y;
+            result[2] = intersectResult.material.diffuse.z * ambient.z;
+            for (Light light : lights.values()) {
+                if (surfaceList.get(0) instanceof SceneNode) {
+                    IntersectResult shadowResult = new IntersectResult();
+                    Ray shadowRay = new Ray();
+                    if (inShadow(intersectResult, light, (SceneNode) surfaceList.get(0), shadowResult, shadowRay)) {
+                        continue;
+                    }
+                }
+
+                double[] lightResult = lightCalculation(light, camera, intersectResult);
+                result[0] += lightResult[0];
+                result[1] += lightResult[1];
+                result[2] += lightResult[2];
+            }
+        }
+        return result;
     }
 
     private double[] lightCalculation(Light light, Camera camera, IntersectResult intersectResult) {
@@ -159,6 +188,28 @@ public class Scene {
         return specularCoef * power * lightColor * Math.pow(Math.max(0, normal.dot(halfVector)), shininess);
     }
 
+//    private double[] reflectionCalculation(Ray ray, int depth, IntersectResult intersectResult) {
+//        double[] result = new double[3];
+//        if (depth > MAX_DEPTH) {
+//            return result;
+//        }
+//
+//        Vector3d reflectionDirection = new Vector3d();
+//        Vector3d temp = new Vector3d(intersectResult.n);
+//        temp.scale(2 * intersectResult.n.dot(ray.viewDirection));
+//        reflectionDirection.sub(ray.viewDirection, temp);
+//        Ray reflectionRay = new Ray(intersectResult.p, reflectionDirection);
+//        IntersectResult intersectResult1 = new IntersectResult();
+//        rayTracing(reflectionRay, intersectResult1);
+//        if (intersectResult.t < Double.POSITIVE_INFINITY) {
+//            double reflectionRatio = 0.8;
+//            double[] tempResult = reflectionCalculation(reflectionRay, depth + 1, intersectResult1);
+//            result[0] += reflectionRatio * tempResult[0];
+//            result[1] += reflectionRatio * tempResult[1];
+//            result[2] += reflectionRatio * tempResult[2];
+//        }
+//        return result;
+//    }
     /**
      * Generate a ray through pixel (i,j).
      * 
