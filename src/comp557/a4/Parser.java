@@ -176,6 +176,43 @@ public class Parser {
 	 */
 	public static Light createLight(Node dataNode) {
 		Light light = new Light();
+		Node typeAttr = dataNode.getAttributes().getNamedItem("type");
+		if ( typeAttr != null ) {
+			light.type = typeAttr.getNodeValue();
+		}
+		if ( light.type.equals("area")) {
+			light = new AreaLight();
+			Node yDirectionAttr = dataNode.getAttributes().getNamedItem("ydirection");
+			if ( yDirectionAttr != null ) {
+				Scanner s = new Scanner( yDirectionAttr.getNodeValue());
+				double x = s.nextDouble();
+				double y = s.nextDouble();
+				double z = s.nextDouble();
+				((AreaLight)light).yDirection.set(x, y, z);
+				((AreaLight)light).yDirection.normalize();
+			}
+			Node xDirectionAttr = dataNode.getAttributes().getNamedItem("xdirection");
+			if ( xDirectionAttr != null ) {
+				Scanner s = new Scanner( xDirectionAttr.getNodeValue());
+				double x = s.nextDouble();
+				double y = s.nextDouble();
+				double z = s.nextDouble();
+				((AreaLight)light).xDirection.set(x, y, z);
+				((AreaLight)light).xDirection.normalize();
+			}
+			Node areaAttr = dataNode.getAttributes().getNamedItem("area");
+			if ( areaAttr != null ) {
+				Scanner s = new Scanner( areaAttr.getNodeValue());
+				((AreaLight)light).area = s.nextInt();
+				s.close();
+			}
+			Node samplesAttr = dataNode.getAttributes().getNamedItem("samples");
+			if ( samplesAttr != null ) {
+				Scanner s = new Scanner( samplesAttr.getNodeValue());
+				((AreaLight)light).samples = s.nextInt();
+				s.close();
+			}
+		}
         light.name = dataNode.getAttributes().getNamedItem("name").getNodeValue();        
         Node colorAttr = dataNode.getAttributes().getNamedItem("color");
         if ( colorAttr != null ) {
@@ -200,10 +237,7 @@ public class Parser {
         if ( powerAttr != null ) {
         	light.power = Double.parseDouble( powerAttr.getNodeValue() );
         }
-        Node typeAttr = dataNode.getAttributes().getNamedItem("type");
-        if ( typeAttr != null ) {
-        	light.type = typeAttr.getNodeValue();
-        }        
+
 		return light;
 	}
 	

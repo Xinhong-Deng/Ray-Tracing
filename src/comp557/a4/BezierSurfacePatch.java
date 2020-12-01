@@ -17,10 +17,8 @@ public class BezierSurfacePatch extends Intersectable {
     private Matrix4d coordinatePatch[][];
     private int SUBDIVISION = 12;
     private Point3d vertices[][][];
-    private Vector3d normals[][][];
     private List<Point3d[]> faces = new ArrayList<>();
 
-    public BezierSurfacePatch() { }
 
     public BezierSurfacePatch(String file) {
         super();
@@ -62,7 +60,6 @@ public class BezierSurfacePatch extends Intersectable {
         }
 
         vertices = new Point3d[coordinatePatch.length][SUBDIVISION][SUBDIVISION];
-        normals = new Vector3d[coordinatePatch.length][SUBDIVISION][SUBDIVISION];   // average point normal to surface normal?
 
         // get all surface point
         for (int patch = 0; patch < coordinatePatch.length; patch++) {
@@ -73,9 +70,7 @@ public class BezierSurfacePatch extends Intersectable {
                     double s1 = (double) i / (N - 1);
                     double t1 = (double) j / (N - 1);
                     coord = evaluateCoordinate(s1, t1, patch);
-                    normal = evalNormal(s1, t1, patch);
                     vertices[patch][i][j] = new Point3d(coord.x, coord.y, coord.z);
-                    normals[patch][i][j] = new Vector3d(normal.x, normal.y, normal.z);
                 }
             }
         }
@@ -132,84 +127,6 @@ public class BezierSurfacePatch extends Intersectable {
         return result;
     }
 
-    private double getBersteinDerivative(int i, double t) {
-        int n = 3;
-        if (i == 0) {
-            return -n * getBerstein(n - 1, i, t);
-        } else if (i == n) {
-            return n * getBerstein(n - 1, i - 1, t);
-        } else {
-            return n * (getBerstein(n - 1, i - 1, t) - getBerstein(n - 1, i, t));
-        }
-
-    }
-
-    /**
-     * differentiates the Bezier mesh along the parametric 's' direction
-     */
-    private Vector3d differentiateS(double s, double t, int patch) {
-        // TODO: Objective 3: Evaluate the surface derivative in the s direction
-        Vector3d result = new Vector3d();
-        for (int i = 0; i < 4; i++) {
-            Vector3d rowResult = new Vector3d();
-            for (int j = 0; j < 4; j++) {
-                Matrix4d[] currentPatch = coordinatePatch[patch];
-                Vector3d temp = new Vector3d(currentPatch[0].getElement(i, j),
-                        currentPatch[1].getElement(i, j),
-                        currentPatch[2].getElement(i, j));
-                temp.scale(getBerstein(3, j, t));
-                rowResult.add(temp);
-            }
-            rowResult.scale(getBersteinDerivative(i, s));
-            result.add(rowResult);
-        }
-        return result;
-    }
-
-    /**
-     * differentiates the Bezier mesh along the parametric 't' direction
-     */
-    private Vector3d differentiateT(double s, double t, int patch) {
-        // TODO: Objective 3: Evaluate the surface derivative in the t direction
-        Vector3d result = new Vector3d();
-        for (int i = 0; i < 4; i++) {
-            Vector3d rowResult = new Vector3d();
-            for (int j = 0; j < 4; j++) {
-                Matrix4d[] currentPatch = coordinatePatch[patch];
-                Vector3d temp = new Vector3d(currentPatch[0].getElement(i, j),
-                        currentPatch[1].getElement(i, j),
-                        currentPatch[2].getElement(i, j));
-                temp.scale(getBersteinDerivative(j, t));
-                rowResult.add(temp);
-            }
-            rowResult.scale(getBerstein(3, i, s));
-            result.add(rowResult);
-        }
-        return result;
-    }
-
-    /**
-     * returns the normal of the Bezier mesh at the parametric (s,t) point.
-     */
-    private Vector3d evalNormal(double s, double t, int patch) {
-        int N = SUBDIVISION;
-        Vector3d differentiateS = differentiateS(s, t, patch);
-        if (differentiateS.length() < 0.0001) {
-            double tOffset = t + 0.5 / (N - 1);
-            differentiateS = differentiateS(s, tOffset, patch);
-        }
-
-        Vector3d differentiateT = differentiateT(s, t, patch);
-        if (differentiateT.length() < 0.0001) {
-            double sOffset = s + 0.5 / (N - 1);
-            differentiateT = differentiateT(sOffset, t, patch);
-        }
-        Vector3d result = new Vector3d();
-        result.cross(differentiateS, differentiateT);
-        result.normalize();
-        return result;
-    }
-
 
     @Override
     public void intersect(Ray ray, IntersectResult result) {
@@ -255,7 +172,7 @@ public class BezierSurfacePatch extends Intersectable {
             if (temp1.dot(normal) > 0 && temp2.dot(normal) > 0 && temp3.dot(normal) > 0) {
                 if (t < result.t) {
                     result.t = t;
-                    result.n = normal;
+                    result.n.set(normal);
                     result.n.negate();
                     result.material = material;
                     result.p = new Point3d(x);

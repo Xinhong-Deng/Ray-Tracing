@@ -71,7 +71,7 @@ public class Mesh extends Intersectable {
 			if (temp1.dot(normal) > 0 && temp2.dot(normal) > 0 && temp3.dot(normal) > 0) {
 				if (t < result.t) {
 					result.t = t;
-					result.n = normal;
+					result.n.set(normal);
 					result.material = material;
 					result.p = new Point3d(x);
 				}

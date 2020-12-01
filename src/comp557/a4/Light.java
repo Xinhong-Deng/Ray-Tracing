@@ -26,4 +26,16 @@ public class Light {
     public Light() {
     	// do nothing
     }
+
+    /**
+     * shallow copy
+     * @param copy
+     */
+    public Light(Light copy) {
+        this.name = copy.name + "_copy";
+        this.type = copy.type;
+        this.power = copy.power;
+        this.color = copy.color;
+        this.from = copy.from;
+    }
 }

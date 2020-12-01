@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.vecmath.Matrix4d;
+import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 
 /**
  * The scene is constructed from a hierarchy of nodes, where each node
@@ -73,10 +75,10 @@ public class SceneNode extends Intersectable {
             }
 
             // todo: bug in shadow
-            result.p = tmpResult.p;
+            result.p.set(tmpResult.p);
             M.transform(result.p);
 
-            result.n = tmpResult.n;
+            result.n.set(tmpResult.n);
             Matrix4d MT = new Matrix4d(Minv);
             MT.transpose();
             MT.transform(result.n);

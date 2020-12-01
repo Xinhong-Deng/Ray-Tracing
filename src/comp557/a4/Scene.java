@@ -42,7 +42,7 @@ public class Scene {
         int h = cam.imageSize.height;
         
         render.init(w, h, showPanel);
-        Random generator = new Random();
+        Random generator = new Random(System.currentTimeMillis());
         for ( int j = 0; j < h && !render.isDone(); j++ ) {
             for ( int i = 0; i < w && !render.isDone(); i++ ) {
             	int r = 0;
@@ -54,11 +54,9 @@ public class Scene {
                 // TODO: Objective 2: test for intersection with scene surfaces - merge with objective 3 in rayTracing()
                 // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
 
-                // monte-carlo antialiasing
+                // uniform antialiasing
                 for (int nsy = 0; nsy < render.samples; nsy ++) {
                     for (int nsx = 0; nsx < render.samples; nsx ++) {
-//                        double rx = generator.nextDouble() - 0.5;
-//                        double ry = generator.nextDouble() - 0.5;
                         double ry = (nsy + 0.5) / render.samples - 0.5;
                         double rx = (nsx + 0.5) / render.samples - 0.5;
 
@@ -67,12 +65,6 @@ public class Scene {
 
                         IntersectResult intersectResult = new IntersectResult();
                         double[] result = rayTracing(ray, intersectResult, cam, 0, new Color3f(render.bgcolor));
-
-                        if (render.jitter) {
-                            r += (generator.nextDouble() - 0.5) * 2.55;
-                            g += (generator.nextDouble() - 0.5) * 2.55;
-                            b += (generator.nextDouble() - 0.5) * 2.55;
-                        }
 
                         r += Math.min(255, (int)((result[0]) * 255));
                         g += Math.min(255, (int)((result[1]) * 255));
@@ -84,6 +76,12 @@ public class Scene {
             	r /= Math.pow(render.samples, 2);
                 g /= Math.pow(render.samples, 2);
                 b /= Math.pow(render.samples, 2);
+
+                if (render.jitter) {
+                    r += (int)((generator.nextDouble() - 0.5) * 2);
+                    g += (int)((generator.nextDouble() - 0.5) * 2);
+                    b += (int)((generator.nextDouble() - 0.5) * 2);
+                }
 
                 int argb = (a<<24 | r<<16 | g<<8 | b);
                 // update the render image
@@ -137,21 +135,58 @@ public class Scene {
             result[1] = intersectResult.material.diffuse.y * ambient.y;
             result[2] = intersectResult.material.diffuse.z * ambient.z;
             for (Light light : lights.values()) {
-                if (surfaceList.get(0) instanceof SceneNode) {
-                    IntersectResult shadowResult = new IntersectResult();
-                    Ray shadowRay = new Ray();
-                    if (inShadow(intersectResult, light, (SceneNode) surfaceList.get(0), shadowResult, shadowRay)) {
-                        continue;
-                    }
+                double[] lightResult = new double[]{0, 0, 0};
+                switch (light.type) {
+                    case "point":
+                        lightResult = pointLightCalculation(intersectResult, light, camera);
+                        break;
+                    case "area":
+                        lightResult = areaLightCalculation(intersectResult, (AreaLight) light, camera);
+                        break;
                 }
-
-                double[] lightResult = lightCalculation(light, camera, intersectResult);
                 result[0] += lightResult[0];
                 result[1] += lightResult[1];
                 result[2] += lightResult[2];
             }
         }
         return result;
+    }
+
+    private double[] pointLightCalculation(IntersectResult intersectResult, Light light, Camera camera) {
+        if (surfaceList.get(0) instanceof SceneNode) {
+            IntersectResult shadowResult = new IntersectResult();
+            Ray shadowRay = new Ray();
+            if (inShadow(intersectResult, light, (SceneNode) surfaceList.get(0), shadowResult, shadowRay)) {
+                return new double[]{0, 0, 0};
+            }
+        }
+
+        return lightCalculation(light, camera, intersectResult);
+
+    }
+
+    private double[] areaLightCalculation(IntersectResult intersectResult, AreaLight light, Camera camera) {
+        double[] lightResult = new double[]{0, 0, 0};
+        for (int ys = 0; ys < light.samples; ys++) {
+            for (int xs = 0; xs < light.samples; xs++) {
+                Vector3d samplingLightPoint = new Vector3d(light.from);
+                double xOffset = ((0.5 + xs)/light.samples - 0.5 ) * Math.sqrt(light.area);
+                double yOffset = ((0.5 + ys)/light.samples - 0.5 ) * Math.sqrt(light.area);
+                samplingLightPoint.scaleAdd(xOffset, light.xDirection, samplingLightPoint);
+                samplingLightPoint.scaleAdd(yOffset, light.yDirection, samplingLightPoint);
+                Light samplingLight = new Light(light);
+                samplingLight.from = new Point3d(samplingLightPoint);
+                double[] temp = pointLightCalculation(intersectResult, samplingLight, camera);
+                lightResult[0] += temp[0];
+                lightResult[1] += temp[1];
+                lightResult[2] += temp[2];
+            }
+
+        }
+        lightResult[0] /= Math.pow(light.samples, 2);
+        lightResult[1] /= Math.pow(light.samples, 2);
+        lightResult[2] /= Math.pow(light.samples, 2);
+        return lightResult;
     }
 
     private double[] lightCalculation(Light light, Camera camera, IntersectResult intersectResult) {
@@ -258,16 +293,17 @@ public class Scene {
 		
 		// TODO: Objective 5: check for shdows and use it in your lighting computation
         double offset = 0.00001;
+        Vector3d pointOfIntersect = new Vector3d(result.p);
 
         Vector3d direction = new Vector3d();
-		direction.sub(light.from, result.p);
+		direction.sub(light.from, pointOfIntersect);
 		double tLight = direction.length() - offset;
 		direction.normalize();
 		shadowRay.viewDirection = direction;
 
         // offset the eyepoint to avoid self-shadowing
         shadowRay.eyePoint = new Point3d();
-        shadowRay.eyePoint.scaleAdd(offset, shadowRay.viewDirection, result.p);
+        shadowRay.eyePoint.scaleAdd(offset, shadowRay.viewDirection, pointOfIntersect);
 
 
 		boolean inShadow = false;
