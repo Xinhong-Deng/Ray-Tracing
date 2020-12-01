@@ -1,4 +1,9 @@
 <?xml version="1.0"?>
+<!--
+  ~ Name: Sandra Deng
+  ~ McGill ID: 260770487
+  -->
+
 <scene ambient="0.1 0.1 0.1 1.0">
   <!-- define camera,material,lights here -->
   <light name="myLight" color="1 1 1" from="-5 5 5" power="0.5" type="point" />

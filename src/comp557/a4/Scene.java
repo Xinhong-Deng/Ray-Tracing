@@ -1,3 +1,8 @@
+/*
+ * Name: Sandra Deng
+ * McGill ID: 260770487
+ */
+
 package comp557.a4;
 
 import java.util.*;
@@ -25,6 +30,80 @@ public class Scene {
 
     private final int MAX_DEPTH = 3;
     private final double REFLECTION_RATIO = 0.8;
+
+    public class SceneThread extends Thread {
+        Thread t;
+        int jStart;
+        int jEnd;
+        final Camera cam;
+        int w;
+
+        public SceneThread(int jStart, int jEnd, final Camera cam, int w) {
+            this.jEnd = jEnd;
+            this.jStart = jStart;
+            this.cam = cam;
+            this.w = w;
+        }
+
+        public void run() {
+            System.out.println("thread" + jStart + "running");
+            Random generator = new Random(System.currentTimeMillis());
+            for ( int j = jStart; j < jEnd && !render.isDone(); j++ ) {
+                for ( int i = 0; i < w && !render.isDone(); i++ ) {
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+                    int a = 255;
+
+                    // TODO: Objective 1: generate a ray (use the generateRay method)
+                    // TODO: Objective 2: test for intersection with scene surfaces - merge with objective 3 in rayTracing()
+                    // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
+
+                    // uniform antialiasing
+                    for (int nsy = 0; nsy < render.samples; nsy ++) {
+                        for (int nsx = 0; nsx < render.samples; nsx ++) {
+                            double ry = (nsy + 0.5) / render.samples - 0.5;
+                            double rx = (nsx + 0.5) / render.samples - 0.5;
+
+                            Ray ray = new Ray();
+                            generateRay(i, j, new double[]{rx, ry}, cam, ray);
+
+                            IntersectResult intersectResult = new IntersectResult();
+                            double[] result = rayTracing(ray, intersectResult, cam, 0, new Color3f(render.bgcolor));
+
+                            r += Math.min(255, (int)((result[0]) * 255));
+                            g += Math.min(255, (int)((result[1]) * 255));
+                            b += Math.min(255, (int)((result[2]) * 255));
+                        }
+
+                    }
+
+                    r /= Math.pow(render.samples, 2);
+                    g /= Math.pow(render.samples, 2);
+                    b /= Math.pow(render.samples, 2);
+
+                    if (render.jitter) {
+                        r += (int)((generator.nextDouble() - 0.5) * 2);
+                        g += (int)((generator.nextDouble() - 0.5) * 2);
+                        b += (int)((generator.nextDouble() - 0.5) * 2);
+                    }
+
+                    int argb = (a<<24 | r<<16 | g<<8 | b);
+                    // update the render image
+                    render.setPixel(i, j, argb);
+
+                }
+            }
+        }
+
+        public void start() {
+            if (t == null) {
+                t = new Thread(this);
+                t.start();
+            }
+        }
+    }
+
     /** 
      * Default constructor.
      */
@@ -42,59 +121,26 @@ public class Scene {
         int h = cam.imageSize.height;
         
         render.init(w, h, showPanel);
-        Random generator = new Random(System.currentTimeMillis());
-        for ( int j = 0; j < h && !render.isDone(); j++ ) {
-            for ( int i = 0; i < w && !render.isDone(); i++ ) {
-            	int r = 0;
-            	int g = 0;
-            	int b = 0;
-                int a = 255;
-
-                // TODO: Objective 1: generate a ray (use the generateRay method)
-                // TODO: Objective 2: test for intersection with scene surfaces - merge with objective 3 in rayTracing()
-                // TODO: Objective 3: compute the shaded result for the intersection point (perhaps requiring shadow rays)
-
-                // uniform antialiasing
-                for (int nsy = 0; nsy < render.samples; nsy ++) {
-                    for (int nsx = 0; nsx < render.samples; nsx ++) {
-                        double ry = (nsy + 0.5) / render.samples - 0.5;
-                        double rx = (nsx + 0.5) / render.samples - 0.5;
-
-                        Ray ray = new Ray();
-                        generateRay(i, j, new double[]{rx, ry}, cam, ray);
-
-                        IntersectResult intersectResult = new IntersectResult();
-                        double[] result = rayTracing(ray, intersectResult, cam, 0, new Color3f(render.bgcolor));
-
-                        r += Math.min(255, (int)((result[0]) * 255));
-                        g += Math.min(255, (int)((result[1]) * 255));
-                        b += Math.min(255, (int)((result[2]) * 255));
-                    }
-
-                }
-
-            	r /= Math.pow(render.samples, 2);
-                g /= Math.pow(render.samples, 2);
-                b /= Math.pow(render.samples, 2);
-
-                if (render.jitter) {
-                    r += (int)((generator.nextDouble() - 0.5) * 2);
-                    g += (int)((generator.nextDouble() - 0.5) * 2);
-                    b += (int)((generator.nextDouble() - 0.5) * 2);
-                }
-
-                int argb = (a<<24 | r<<16 | g<<8 | b);
-                // update the render image
-                render.setPixel(i, j, argb);
-
-            }
+        List<SceneThread> threads = new ArrayList<>();
+        int rowsPerThread = 100;
+        for (int j = 0; j < h; j += rowsPerThread) {
+            SceneThread thread = new SceneThread(j, Math.min(j+rowsPerThread, h-1), cam, w);
+            threads.add(thread);
+            thread.start();
         }
-        
-        // save the final render image
-        render.save();
-        
+
+        try {
+            for (SceneThread thread : threads) {
+                thread.join();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         // wait for render viewer to close
         render.waitDone();
+        // save the final render image
+        render.save();
         
     }
 
@@ -142,6 +188,9 @@ public class Scene {
                         break;
                     case "area":
                         lightResult = areaLightCalculation(intersectResult, (AreaLight) light, camera);
+                        break;
+                    default:
+                        lightResult = pointLightCalculation(intersectResult, light, camera);
                         break;
                 }
                 result[0] += lightResult[0];

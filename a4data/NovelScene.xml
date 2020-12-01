@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!--
+  ~ Name: Sandra Deng
+  ~ McGill ID: 260770487
+  -->
+
+<scene ambient="0.1 0.1 0.1 1.0">
+
+    <light name="area" color="1 1 1" from="0 10 0 " power="0.5" type="area" ydirection="0 0 1" xdirection="1 0 0" samples="4"/>
+    <light name="myLight" color="1 1 0" from="-3 10 1 " power="0.2" type="point" />
+
+
+    <material name="green" diffuse="0.36 0.6 0" specular="0.5 0.5 0.5" hardness="16" />
+    <material name="tan" diffuse="0.82 0.70 0.55" specular="0.5 0.5 0.5" hardness="16" />
+    <material name="gray" diffuse="0.87 0.87 0.87" specular="0.5 0.5 0.5" hardness="16" />
+    <material name="mirror" />
+    <material name="orange" diffuse="0.8 0.4 0" specular="0 0 0" hardness="16"/>
+
+    <!-- render configuration -->
+    <render bgcolor="0.75 0.75 0.75" output="NovelScene.png" >
+        <camera name="myCamera" from="0 3 4" to="0 0 0" up="0 1 0" fovy="45" width="512" height="512" />
+    </render>
+
+    <node name="root" >
+
+        <node name="group1" translation="0 0 0">
+            <node name="patch" translation="0 0.5 0" rotation="-90 0 -45" scale="0.5 0.5 0.5">
+                <bezier name="teapot" filename="a4data/Teapot.txt" >
+                    <material ref="green" />
+                </bezier>
+            </node>
+
+            <node name="torus" >
+                <mesh name="myTorus" filename="a4data/torus.obj" >
+                    <material ref="tan" />
+                </mesh>
+            </node>
+
+        </node>
+
+
+        <node name="group2" translation="2 0 -1" rotation="0 -45 0">
+            <node name="mirrorobj"  scale="0.5 1 0.2">
+                <sphere center="0 1 0" radius="1.0">
+                    <material ref="mirror"/>
+                </sphere>
+            </node>
+            <node name="mirrorobj2" translation="0.7 0 -1" scale="0.1 1 0.2" rotation="0 20 45">
+                <box >
+                    <material ref="gray"/>
+                </box>
+            </node>
+
+        </node>
+
+    <plane >
+        <material ref="orange"/>
+    </plane>
+    </node>
+
+</scene>

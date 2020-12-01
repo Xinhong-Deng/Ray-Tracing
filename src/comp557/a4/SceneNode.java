@@ -1,3 +1,8 @@
+/*
+ * Name: Sandra Deng
+ * McGill ID: 260770487
+ */
+
 package comp557.a4;
 
 import java.util.HashMap;
@@ -48,18 +53,16 @@ public class SceneNode extends Intersectable {
     	this.children = new LinkedList<Intersectable>();
     }
     
-    private IntersectResult tmpResult = new IntersectResult();
-    
-    private Ray tmpRay = new Ray();
-    
     @Override
     public void intersect(Ray ray, IntersectResult result) {
+        Ray tmpRay = new Ray();
+        IntersectResult tmpResult = new IntersectResult();
     	tmpRay.eyePoint.set(ray.eyePoint);
     	tmpRay.viewDirection.set(ray.viewDirection);
     	Minv.transform(tmpRay.eyePoint);
     	Minv.transform(tmpRay.viewDirection);    	
     	tmpResult.t = Double.POSITIVE_INFINITY;
-//    	tmpResult.n.set(0, 0, 1);
+    	tmpResult.n.set(0, 0, 1);
         for ( Intersectable s : children ) {
             s.intersect( tmpRay, tmpResult );
         }
@@ -74,7 +77,6 @@ public class SceneNode extends Intersectable {
                 result.material = tmpResult.material;
             }
 
-            // todo: bug in shadow
             result.p.set(tmpResult.p);
             M.transform(result.p);
 

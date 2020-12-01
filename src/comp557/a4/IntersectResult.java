@@ -1,3 +1,8 @@
+/*
+ * Name: Sandra Deng
+ * McGill ID: 260770487
+ */
+
 package comp557.a4;
 
 import javax.vecmath.Point3d;

@@ -1,3 +1,8 @@
+/*
+ * Name: Sandra Deng
+ * McGill ID: 260770487
+ */
+
 package comp557.a4;
 
 import javax.vecmath.Point3d;
@@ -27,7 +32,6 @@ public class Mesh extends Intersectable {
 	public void intersect(Ray ray, IntersectResult result) {
 		
 		// TODO: Objective 7: ray triangle intersection for meshes
-		// todo: may have multiple meshes
 		// each face is a triangle
 		for (int[] face : soup.faceList) {
 			Vector3d ab = new Vector3d();

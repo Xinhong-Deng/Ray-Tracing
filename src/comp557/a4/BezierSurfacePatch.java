@@ -1,3 +1,8 @@
+/*
+ * Name: Sandra Deng
+ * McGill ID: 260770487
+ */
+
 package comp557.a4;
 
 import javax.vecmath.Matrix4d;
@@ -15,7 +20,7 @@ public class BezierSurfacePatch extends Intersectable {
 
     // think about how to convert the control points to triangular faces
     private Matrix4d coordinatePatch[][];
-    private int SUBDIVISION = 12;
+    private int SUBDIVISION = 10;
     private Point3d vertices[][][];
     private List<Point3d[]> faces = new ArrayList<>();
 
