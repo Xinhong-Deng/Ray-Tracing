@@ -1,21 +1,39 @@
 # COMP557_Ray_Tracing
 
-Name: Sandra Deng
+Implement ray tracing from scratch.
 
-McGill ID: 260770487
+Ray tracing is like:
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/raytracinginanutshell.PNG)
 
-other features:
+## Simple Models
 
-1. bezier patches
+### Sphere
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/Sphere.png)
 
-results in TestBezier.png
+### AACheckerboard
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/AACheckerPlane.png)
 
-2. mirror reflection
+### Boxes
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/BoxStacks.png)
 
-result in CornellArea.png
+### Mesh
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/TorusMesh.png)
 
-3. speed up with threads
+### Hard Shadow
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/TwoSpheresPlane.png)
 
-4. area light
 
-result in CornellArea.png
+## Other Features
+
+### bezier patches
+
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/TestBezier.png)
+
+### Mirror Reflection + Area Light (soft shadow)
+
+![](https://github.com/Xinhong-Deng/COMP557_Ray_Tracing/blob/main/CornellArea.png)
+
+### Speed Up with CPU Threads
+
+Actually, we shouldn't force the CPU to do the GPU's job :(
+
