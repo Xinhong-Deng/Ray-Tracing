@@ -1,4 +1,4 @@
-# COMP557_Ray_Tracing
+# Ray Tracing
 
 Implement ray tracing from scratch.
 
